@@ -1,388 +1,105 @@
-<section id="adminPanel">
+const express = require("express");
+const session = require("express-session");
 
-  <div class="card">
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-    <h2>🔐 SHADOW RANCH – ADMIN PANEL</h2>
+app.use(express.json());
 
-    <p class="notice">
-      Gib den Admin-Code ein, um das Panel zu öffnen.
-    </p>
-
-    <div style="margin-top:20px;">
-
-      <input
-        type="password"
-        id="adminCode"
-        placeholder="Admin-Code"
-        autocomplete="off"
-        style="
-          width:100%;
-          padding:14px;
-          box-sizing:border-box;
-          margin-bottom:12px;
-        "
-      >
-
-      <button
-        class="btn primary"
-        type="button"
-        onclick="loginAdmin()"
-      >
-        🔓 ADMIN ÖFFNEN
-      </button>
-
-    </div>
-
-    <div
-      id="adminContent"
-      style="display:none; margin-top:25px;"
-    >
-
-      <h3>📋 Bewerbungen</h3>
-
-      <div id="applicationsList">
-
-        <p class="notice">
-          Bewerbungen werden geladen...
-        </p>
-
-      </div>
-
-    </div>
-
-  </div>
-
-</section>
-
-
-<script>
-
-const ADMIN_CODE = "2580";
-
-
-function loginAdmin(){
-
-    const input = document.getElementById("adminCode");
-
-    const content = document.getElementById("adminContent");
-
-
-    if(!input){
-
-        alert("❌ Admin-Code-Feld nicht gefunden!");
-
-        return;
-
+app.use(session({
+    secret: process.env.SESSION_SECRET || "shadow-ranch-secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: true,
+        httpOnly: true,
+        sameSite: "lax"
     }
+}));
 
+app.use(express.static("public"));
 
-    const code = input.value.trim();
+app.get("/login", (req, res) => {
+    const params = new URLSearchParams({
+        client_id: process.env.DISCORD_CLIENT_ID,
+        redirect_uri: process.env.DISCORD_REDIRECT_URI,
+        response_type: "code",
+        scope: "identify guilds.members.read"
+    });
 
+    res.redirect(
+        "https://discord.com/oauth2/authorize?" + params.toString()
+    );
+});
 
-    if(code === ADMIN_CODE){
+app.get("/callback", async (req, res) => {
+    try {
+        const code = req.query.code;
 
-        content.style.display = "block";
-
-        alert("✅ Admin-Zugang erfolgreich!");
-
-        loadApplications();
-
-    }else{
-
-        alert("❌ Falscher Admin-Code!");
-
-        input.value = "";
-
-        input.focus();
-
-    }
-
-}
-
-
-async function loadApplications(){
-
-    const list =
-        document.getElementById("applicationsList");
-
-
-    if(!list) return;
-
-
-    try{
-
-        const response =
-            await fetch("/api/applications");
-
-
-        if(!response.ok){
-
-            list.innerHTML = `
-                <p class="notice">
-                    ⚠️ Bewerbungen konnten nicht geladen werden.
-                </p>
-            `;
-
-            return;
-
+        if (!code) {
+            return res.status(400).send("Discord-Code fehlt.");
         }
 
-
-        const applications =
-            await response.json();
-
-
-        if(!applications ||
-           applications.length === 0){
-
-            list.innerHTML = `
-                <p class="notice">
-                    📭 Keine Bewerbungen vorhanden.
-                </p>
-            `;
-
-            return;
-
-        }
-
-
-        list.innerHTML =
-            applications.map(app => `
-
-            <div
-                class="card"
-                style="margin-top:15px;"
-            >
-
-                <h3>
-                    👤 ${escapeHtml(
-                        app.name || "Unbekannt"
-                    )}
-                </h3>
-
-                <p>
-                    <b>OOC-Alter:</b>
-                    ${escapeHtml(
-                        app.age || "-"
-                    )}
-                </p>
-
-                <p>
-                    <b>Status:</b>
-                    ${escapeHtml(
-                        app.status || "Offen"
-                    )}
-                </p>
-
-
-                <div style="margin-top:15px;">
-
-                    <button
-                        class="btn"
-                        style="
-                            background:#238636;
-                            color:white;
-                            border:none;
-                        "
-                        onclick="
-                            updateApplication(
-                                '${app.id}',
-                                'accepted'
-                            )
-                        "
-                    >
-                        ✅ ANNEHMEN
-                    </button>
-
-
-                    <button
-                        class="btn"
-                        style="
-                            background:#da3633;
-                            color:white;
-                            border:none;
-                        "
-                        onclick="
-                            updateApplication(
-                                '${app.id}',
-                                'rejected'
-                            )
-                        "
-                    >
-                        ❌ ABLEHNEN
-                    </button>
-
-
-                    <button
-                        class="btn"
-                        onclick="
-                            deleteApplication(
-                                '${app.id}'
-                            )
-                        "
-                    >
-                        🗑️ LÖSCHEN
-                    </button>
-
-                </div>
-
-            </div>
-
-        `).join("");
-
-
-    }catch(error){
-
-        console.error(error);
-
-
-        list.innerHTML = `
-            <p class="notice">
-                ❌ Fehler beim Laden der Bewerbungen.
-            </p>
-        `;
-
-    }
-
-}
-
-
-async function updateApplication(
-    id,
-    status
-){
-
-    try{
-
-        const response =
-            await fetch(
-                "/api/applications/" + id,
-                {
-                    method:"PUT",
-
-                    headers:{
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:JSON.stringify({
-                        status:status
-                    })
-                }
-            );
-
-
-        if(response.ok){
-
-            if(status === "accepted"){
-
-                alert(
-                    "✅ Bewerbung angenommen!"
-                );
-
-            }else{
-
-                alert(
-                    "❌ Bewerbung abgelehnt!"
-                );
-
+        const tokenResponse = await fetch(
+            "https://discord.com/api/oauth2/token",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: new URLSearchParams({
+                    client_id: process.env.DISCORD_CLIENT_ID,
+                    client_secret: process.env.DISCORD_CLIENT_SECRET,
+                    grant_type: "authorization_code",
+                    code: code,
+                    redirect_uri: process.env.DISCORD_REDIRECT_URI
+                })
             }
-
-
-            loadApplications();
-
-        }else{
-
-            alert(
-                "❌ Status konnte nicht geändert werden."
-            );
-
-        }
-
-
-    }catch(error){
-
-        console.error(error);
-
-        alert("❌ Serverfehler.");
-
-    }
-
-}
-
-
-async function deleteApplication(id){
-
-    if(
-        !confirm(
-            "Bewerbung wirklich löschen?"
-        )
-    ){
-
-        return;
-
-    }
-
-
-    try{
-
-        const response =
-            await fetch(
-                "/api/applications/" + id,
-                {
-                    method:"DELETE"
-                }
-            );
-
-
-        if(response.ok){
-
-            alert(
-                "🗑️ Bewerbung gelöscht!"
-            );
-
-            loadApplications();
-
-        }else{
-
-            alert(
-                "❌ Bewerbung konnte nicht gelöscht werden."
-            );
-
-        }
-
-
-    }catch(error){
-
-        console.error(error);
-
-        alert("❌ Serverfehler.");
-
-    }
-
-}
-
-
-function escapeHtml(value){
-
-    return String(value)
-
-        .replaceAll("&","&amp;")
-
-        .replaceAll("<","&lt;")
-
-        .replaceAll(">","&gt;")
-
-        .replaceAll(
-            '"',
-            "&quot;"
-        )
-
-        .replaceAll(
-            "'",
-            "&#039;"
         );
 
-}
+        const token = await tokenResponse.json();
 
-</script>
+        if (!token.access_token) {
+            return res.status(401).send("Discord-Anmeldung fehlgeschlagen.");
+        }
+
+        const userResponse = await fetch(
+            "https://discord.com/api/users/@me",
+            {
+                headers: {
+                    Authorization: `Bearer ${token.access_token}`
+                }
+            }
+        );
+
+        const user = await userResponse.json();
+
+        req.session.user = {
+            id: user.id,
+            username: user.username,
+            global_name: user.global_name || user.username,
+            avatar: user.avatar
+        };
+
+        res.redirect("/");
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Fehler beim Discord-Login.");
+    }
+});
+
+app.get("/api/me", (req, res) => {
+    res.json({
+        loggedIn: !!req.session.user,
+        user: req.session.user || null
+    });
+});
+
+app.get("/logout", (req, res) => {
+    req.session.destroy(() => {
+        res.redirect("/");
+    });
+});
+
+app.listen(PORT, () => {
+    console.log(`Shadow Ranch läuft auf Port ${PORT}`);
