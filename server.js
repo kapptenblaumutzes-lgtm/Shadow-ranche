@@ -1,37 +1,44 @@
 const express = require("express");
 const session = require("express-session");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use(session({
-    secret: process.env.SESSION_SECRET || "shadow-ranch-secret",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        secure: true,
-        httpOnly: true,
-        sameSite: "lax"
-    }
-}));
-const path = require("path");
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET || "shadow-ranch-secret",
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            secure: process.env.NODE_ENV === "production",
+            httpOnly: true,
+            sameSite: "lax"
+        }
+    })
+);
+
+// Öffentliche Webseite
+app.use(express.static(path.join(__dirname, "public")));
+
+// Assets
+app.use("/assets", express.static(path.join(__dirname, "public", "assets")));
+
+// Startseite
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-res.sendFile(path.join(__dirname, "index.html"));;
-res.sendFile(path.join(__dirname, "public", "index.html"));
-
-});
-
+// Discord Login
 app.get("/login", (req, res) => {
     const params = new URLSearchParams({
         client_id: process.env.DISCORD_CLIENT_ID,
         redirect_uri: process.env.DISCORD_REDIRECT_URI,
         response_type: "code",
-        scope: "identify guilds.members.read"
+        scope: "identify"
     });
 
     res.redirect(
@@ -39,6 +46,7 @@ app.get("/login", (req, res) => {
     );
 });
 
+// Discord Callback
 app.get("/callback", async (req, res) => {
     try {
         const code = req.query.code;
@@ -67,6 +75,7 @@ app.get("/callback", async (req, res) => {
         const token = await tokenResponse.json();
 
         if (!token.access_token) {
+            console.error(token);
             return res.status(401).send("Discord-Anmeldung fehlgeschlagen.");
         }
 
@@ -95,6 +104,7 @@ app.get("/callback", async (req, res) => {
     }
 });
 
+// Angemeldeten Benutzer anzeigen
 app.get("/api/me", (req, res) => {
     res.json({
         loggedIn: !!req.session.user,
@@ -102,12 +112,14 @@ app.get("/api/me", (req, res) => {
     });
 });
 
+// Logout
 app.get("/logout", (req, res) => {
     req.session.destroy(() => {
         res.redirect("/");
     });
 });
 
+// Server starten
 app.listen(PORT, () => {
     console.log(`Shadow Ranch läuft auf Port ${PORT}`);
 });
