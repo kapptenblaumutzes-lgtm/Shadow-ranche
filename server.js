@@ -1,269 +1,391 @@
-<!-- ========================= -->
-<!-- BEWERBUNG -->
-<!-- ========================= -->
+const express = require("express");
+const session = require("express-session");
+const path = require("path");
 
-<section id="bewerbung">
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-    <div class="card">
-
-        <h2>📝 BEWERBUNG</h2>
-
-        <p class="notice">
-            Fülle die Bewerbung vollständig aus.
-        </p>
-
-        <form id="applicationForm">
-
-            <label>IC-Name</label>
-
-            <input
-                type="text"
-                id="icName"
-                placeholder="Dein IC-Name"
-                required
-            >
-
-            <label>OOC-Alter</label>
-
-            <input
-                type="number"
-                id="oocAge"
-                placeholder="Dein OOC-Alter"
-                min="1"
-                max="99"
-                required
-            >
-
-            <button
-                type="submit"
-                class="btn primary"
-            >
-                📤 BEWERBUNG ABSENDEN
-            </button>
-
-        </form>
-
-        <div
-            id="applicationMessage"
-            style="margin-top:15px;"
-        ></div>
-
-    </div>
-
-</section>
-
-
-<!-- ========================= -->
-<!-- ADMIN -->
-<!-- ========================= -->
-
-<section id="admin">
-
-    <div class="card">
-
-        <h2>🔐 ADMIN PANEL</h2>
-
-        <p class="notice">
-            Admin-Code eingeben.
-        </p>
-
-        <input
-            type="password"
-            id="adminCode"
-            placeholder="Admin-Code"
-            autocomplete="off"
-        >
-
-        <button
-            type="button"
-            class="btn primary"
-            onclick="loginAdmin()"
-        >
-            🔓 ADMIN ÖFFNEN
-        </button>
-
-        <div
-            id="adminContent"
-            style="display:none; margin-top:30px;"
-        >
-
-            <h3>📋 BEWERBUNGEN</h3>
-
-            <div
-                id="applicationsList"
-            >
-
-                <p class="notice">
-                    Bewerbungen werden geladen...
-                </p>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</section>
-
-
-<script>
-
-/* ========================= */
-/* ADMIN CODE */
-/* ========================= */
+/* =========================
+   EINSTELLUNGEN
+========================= */
 
 const ADMIN_CODE = "2580";
 
-let adminLoggedIn = false;
+// BRUDERSCHAFT-ROLLE
+const DISCORD_ROLE_ID =
+    "1506227153942089818";
+
+// BÜRGER-ROLLE
+const DISCORD_CITIZEN_ROLE_ID =
+    "1516382500048470076";
+
+// DISCORD SERVER
+const DISCORD_GUILD_ID =
+    process.env.DISCORD_GUILD_ID;
+
+// DISCORD BOT
+const DISCORD_BOT_TOKEN =
+    process.env.DISCORD_BOT_TOKEN;
+
+// DISCORD OAUTH
+const DISCORD_CLIENT_ID =
+    process.env.DISCORD_CLIENT_ID;
+
+const DISCORD_CLIENT_SECRET =
+    process.env.DISCORD_CLIENT_SECRET;
+
+const DISCORD_REDIRECT_URI =
+    process.env.DISCORD_REDIRECT_URI;
 
 
-/* ========================= */
-/* ADMIN LOGIN */
-/* ========================= */
+/* =========================
+   EXPRESS
+========================= */
 
-function loginAdmin(){
+app.use(express.json());
 
-    const input =
-        document.getElementById("adminCode");
-
-    const content =
-        document.getElementById("adminContent");
-
-
-    const code =
-        input.value.trim();
+app.use(
+    express.urlencoded({
+        extended: true
+    })
+);
 
 
-    if(code === ADMIN_CODE){
+/* =========================
+   SESSION
+========================= */
 
-        adminLoggedIn = true;
+app.use(
+    session({
 
-        content.style.display = "block";
+        secret:
+            process.env.SESSION_SECRET ||
+            "shadow-ranch-secret",
 
-        input.value = "";
+        resave: false,
 
-        alert("✅ Admin-Zugang erfolgreich!");
+        saveUninitialized: false,
 
-        loadApplications();
+        cookie: {
 
-    }else{
+            secure:
+                process.env.NODE_ENV ===
+                "production",
 
-        alert("❌ Falscher Admin-Code!");
+            httpOnly: true,
 
-        input.value = "";
-
-        input.focus();
-
-    }
-
-}
-
-
-/* ========================= */
-/* BEWERBUNG ABSENDEN */
-/* ========================= */
-
-document
-.getElementById("applicationForm")
-.addEventListener(
-    "submit",
-    async function(event){
-
-        event.preventDefault();
-
-
-        const icName =
-            document
-            .getElementById("icName")
-            .value
-            .trim();
-
-
-        const oocAge =
-            document
-            .getElementById("oocAge")
-            .value
-            .trim();
-
-
-        if(!icName || !oocAge){
-
-            alert(
-                "❌ Bitte alle Felder ausfüllen."
-            );
-
-            return;
+            sameSite: "lax"
 
         }
 
+    })
+);
 
-        try{
 
-            const response =
+/* =========================
+   WEBSEITE
+========================= */
+
+app.use(
+    express.static(
+        path.join(
+            __dirname,
+            "public"
+        )
+    )
+);
+
+
+app.use(
+    "/assets",
+    express.static(
+        path.join(
+            __dirname,
+            "public",
+            "assets"
+        )
+    )
+);
+
+
+/* =========================
+   STARTSEITE
+========================= */
+
+app.get("/", (req, res) => {
+
+    res.sendFile(
+        path.join(
+            __dirname,
+            "public",
+            "index.html"
+        )
+    );
+
+});
+
+
+/* =========================
+   DISCORD LOGIN
+========================= */
+
+app.get("/login", (req, res) => {
+
+    if (
+        !DISCORD_CLIENT_ID ||
+        !DISCORD_REDIRECT_URI
+    ) {
+
+        return res
+            .status(500)
+            .send(
+                "Discord Login ist nicht vollständig eingerichtet."
+            );
+
+    }
+
+
+    const params =
+        new URLSearchParams({
+
+            client_id:
+                DISCORD_CLIENT_ID,
+
+            redirect_uri:
+                DISCORD_REDIRECT_URI,
+
+            response_type:
+                "code",
+
+            scope:
+                "identify"
+
+        });
+
+
+    res.redirect(
+        "https://discord.com/oauth2/authorize?" +
+        params.toString()
+    );
+
+});
+
+
+/* =========================
+   DISCORD CALLBACK
+========================= */
+
+app.get(
+    "/callback",
+    async (req, res) => {
+
+        try {
+
+            const code =
+                req.query.code;
+
+
+            if (!code) {
+
+                return res
+                    .status(400)
+                    .send(
+                        "Discord-Code fehlt."
+                    );
+
+            }
+
+
+            const tokenResponse =
                 await fetch(
-                    "/api/applications",
+                    "https://discord.com/api/oauth2/token",
                     {
-                        method:"POST",
 
-                        headers:{
+                        method: "POST",
+
+                        headers: {
+
                             "Content-Type":
-                                "application/json"
+                                "application/x-www-form-urlencoded"
+
                         },
 
-                        body:JSON.stringify({
+                        body:
+                            new URLSearchParams({
 
-                            icName: icName,
+                                client_id:
+                                    DISCORD_CLIENT_ID,
 
-                            oocAge: oocAge
+                                client_secret:
+                                    DISCORD_CLIENT_SECRET,
 
-                        })
+                                grant_type:
+                                    "authorization_code",
+
+                                code:
+                                    code,
+
+                                redirect_uri:
+                                    DISCORD_REDIRECT_URI
+
+                            })
 
                     }
                 );
 
 
-            const data =
-                await response.json();
+            const token =
+                await tokenResponse.json();
 
 
-            if(response.ok){
+            if (!token.access_token) {
 
-                document
-                .getElementById(
-                    "applicationMessage"
-                )
-                .innerHTML = `
-                    <div class="notice">
-                        ✅ Bewerbung erfolgreich
-                        abgeschickt!
-                    </div>
-                `;
-
-
-                document
-                .getElementById(
-                    "applicationForm"
-                )
-                .reset();
-
-
-            }else{
-
-                alert(
-                    data.error ||
-                    "❌ Bewerbung konnte nicht gesendet werden."
+                console.error(
+                    "Discord Token Fehler:",
+                    token
                 );
+
+                return res
+                    .status(401)
+                    .send(
+                        "Discord-Anmeldung fehlgeschlagen."
+                    );
 
             }
 
 
-        }catch(error){
+            const userResponse =
+                await fetch(
+                    "https://discord.com/api/users/@me",
+                    {
+
+                        headers: {
+
+                            Authorization:
+                                `Bearer ${token.access_token}`
+
+                        }
+
+                    }
+                );
+
+
+            const user =
+                await userResponse.json();
+
+
+            /* =========================
+               BENUTZER SPEICHERN
+            ========================= */
+
+            req.session.user = {
+
+                id:
+                    user.id,
+
+                username:
+                    user.username,
+
+                global_name:
+                    user.global_name ||
+                    user.username,
+
+                avatar:
+                    user.avatar,
+
+                isBruderschaft:
+                    false,
+
+                isBuerger:
+                    false
+
+            };
+
+
+            /* =========================
+               DISCORD ROLLEN PRÜFEN
+            ========================= */
+
+            if (
+                DISCORD_GUILD_ID &&
+                DISCORD_BOT_TOKEN
+            ) {
+
+                try {
+
+                    const memberResponse =
+                        await fetch(
+                            `https://discord.com/api/v10/guilds/${DISCORD_GUILD_ID}/members/${user.id}`,
+                            {
+
+                                headers: {
+
+                                    Authorization:
+                                        `Bot ${DISCORD_BOT_TOKEN}`
+
+                                }
+
+                            }
+                        );
+
+
+                    if (
+                        memberResponse.ok
+                    ) {
+
+                        const member =
+                            await memberResponse.json();
+
+
+                        const roles =
+                            Array.isArray(
+                                member.roles
+                            )
+                                ? member.roles
+                                : [];
+
+
+                        /* BRUDERSCHAFT */
+
+                        req.session.user.isBruderschaft =
+                            roles.includes(
+                                DISCORD_ROLE_ID
+                            );
+
+
+                        /* BÜRGER */
+
+                        req.session.user.isBuerger =
+                            roles.includes(
+                                DISCORD_CITIZEN_ROLE_ID
+                            );
+
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        "Discord Rollenprüfung:",
+                        error
+                    );
+
+                }
+
+            }
+
+
+            res.redirect("/");
+
+
+        } catch (error) {
 
             console.error(error);
 
-            alert(
-                "❌ Serverfehler beim Absenden."
-            );
+            res
+                .status(500)
+                .send(
+                    "Fehler beim Discord-Login."
+                );
 
         }
 
@@ -271,614 +393,409 @@ document
 );
 
 
-/* ========================= */
-/* BEWERBUNGEN LADEN */
-/* ========================= */
+/* =========================
+   ANGEMELDETEN BENUTZER
+========================= */
 
-async function loadApplications(){
+app.get(
+    "/api/me",
+    (req, res) => {
 
-    const list =
-        document
-        .getElementById(
-            "applicationsList"
+        res.json({
+
+            loggedIn:
+                !!req.session.user,
+
+            user:
+                req.session.user ||
+                null
+
+        });
+
+    }
+);
+
+
+/* =========================
+   LOGOUT
+========================= */
+
+app.get(
+    "/logout",
+    (req, res) => {
+
+        req.session.destroy(
+            () => {
+
+                res.redirect("/");
+
+            }
+        );
+
+    }
+);
+
+
+/* =========================
+   BEWERBUNGEN
+========================= */
+
+let applications = [];
+
+let nextApplicationId = 1;
+
+
+/* =========================
+   BEWERBUNG ABSENDEN
+========================= */
+
+app.post(
+    "/api/applications",
+    (req, res) => {
+
+        if (!req.session.user) {
+
+            return res
+                .status(401)
+                .json({
+
+                    error:
+                        "Du musst dich mit Discord anmelden."
+
+                });
+
+        }
+
+
+        const icName =
+            String(
+                req.body.icName || ""
+            ).trim();
+
+
+        const oocAge =
+            String(
+                req.body.oocAge || ""
+            ).trim();
+
+
+        if (
+            !icName ||
+            !oocAge
+        ) {
+
+            return res
+                .status(400)
+                .json({
+
+                    error:
+                        "IC-Name und OOC-Alter müssen ausgefüllt werden."
+
+                });
+
+        }
+
+
+        const application = {
+
+            id:
+                String(
+                    nextApplicationId++
+                ),
+
+            icName:
+                icName,
+
+            oocAge:
+                oocAge,
+
+            status:
+                "offen",
+
+            discordId:
+                req.session.user.id,
+
+            discordName:
+                req.session.user.global_name ||
+                req.session.user.username,
+
+            createdAt:
+                new Date().toISOString()
+
+        };
+
+
+        applications.push(
+            application
         );
 
 
-    if(!adminLoggedIn){
+        res.json({
 
-        return;
+            success:
+                true,
+
+            application:
+                application
+
+        });
 
     }
+);
 
 
-    try{
+/* =========================
+   ADMIN PRÜFUNG
+========================= */
 
-        const response =
-            await fetch(
-                "/api/applications"
-            );
+function isAdmin(req) {
+
+    return (
+        req.session.user &&
+        req.session.user.isBruderschaft === true
+    );
+
+}
 
 
-        if(!response.ok){
+/* =========================
+   ADMIN CHECK
+========================= */
 
-            list.innerHTML = `
-                <p class="notice">
-                    ❌ Bewerbungen konnten
-                    nicht geladen werden.
-                </p>
-            `;
+app.get(
+    "/api/admin/check",
+    (req, res) => {
 
-            return;
+        res.json({
+
+            admin:
+                isAdmin(req),
+
+            codeRequired:
+                ADMIN_CODE
+
+        });
+
+    }
+);
+
+
+/* =========================
+   BEWERBUNGEN ANZEIGEN
+========================= */
+
+app.get(
+    "/api/applications",
+    (req, res) => {
+
+        if (!isAdmin(req)) {
+
+            return res
+                .status(403)
+                .json({
+
+                    error:
+                        "Keine Bruderschaft-Berechtigung."
+
+                });
 
         }
 
 
-        const applications =
-            await response.json();
-
-
-        if(
-            !applications ||
-            applications.length === 0
-        ){
-
-            list.innerHTML = `
-                <div class="card">
-                    <p class="notice">
-                        📭 Keine Bewerbungen
-                        vorhanden.
-                    </p>
-                </div>
-            `;
-
-            return;
-
-        }
-
-
-        list.innerHTML =
+        res.json(
             applications
-            .map(
-                application =>
-                    createApplicationCard(
-                        application
-                    )
-            )
-            .join("");
-
-
-    }catch(error){
-
-        console.error(error);
-
-
-        list.innerHTML = `
-            <p class="notice">
-                ❌ Fehler beim Laden
-                der Bewerbungen.
-            </p>
-        `;
-
-    }
-
-}
-
-
-/* ========================= */
-/* BEWERBUNG KARTE */
-/* ========================= */
-
-function createApplicationCard(application){
-
-    let statusText =
-        application.status ||
-        "offen";
-
-
-    let statusColor =
-        "#d6a84f";
-
-
-    if(statusText === "angenommen"){
-
-        statusColor = "#238636";
-
-    }
-
-
-    if(statusText === "abgelehnt"){
-
-        statusColor = "#da3633";
-
-    }
-
-
-    return `
-
-        <div
-            class="card"
-            style="
-                margin-top:20px;
-                border:1px solid #2a241d;
-            "
-        >
-
-            <h3>
-                👤 Bewerbung
-            </h3>
-
-
-            <p>
-                <b>IC-Name:</b><br>
-
-                ${escapeHtml(
-                    application.icName ||
-                    application.name ||
-                    "-"
-                )}
-
-            </p>
-
-
-            <p>
-                <b>OOC-Alter:</b><br>
-
-                ${escapeHtml(
-                    application.oocAge ||
-                    application.age ||
-                    "-"
-                )}
-
-            </p>
-
-
-            <p>
-
-                <b>Status:</b>
-
-                <span
-                    style="
-                        color:${statusColor};
-                        font-weight:bold;
-                    "
-                >
-
-                    ${escapeHtml(
-                        statusText
-                    )}
-
-                </span>
-
-            </p>
-
-
-            <div
-                style="
-                    display:flex;
-                    gap:10px;
-                    flex-wrap:wrap;
-                    margin-top:20px;
-                "
-            >
-
-                <!-- ANNEHMEN -->
-
-                <button
-                    type="button"
-                    class="btn"
-                    style="
-                        background:#238636;
-                        color:white;
-                        border:none;
-                    "
-                    onclick="
-                        updateApplication(
-                            '${application.id}',
-                            'angenommen'
-                        )
-                    "
-                >
-                    ✅ ANNEHMEN
-                </button>
-
-
-                <!-- ABLEHNEN -->
-
-                <button
-                    type="button"
-                    class="btn"
-                    style="
-                        background:#da3633;
-                        color:white;
-                        border:none;
-                    "
-                    onclick="
-                        updateApplication(
-                            '${application.id}',
-                            'abgelehnt'
-                        )
-                    "
-                >
-                    ❌ ABLEHNEN
-                </button>
-
-
-                <!-- BEARBEITEN -->
-
-                <button
-                    type="button"
-                    class="btn"
-                    onclick="
-                        editApplication(
-                            '${application.id}',
-                            '${escapeAttribute(
-                                application.icName ||
-                                application.name ||
-                                ""
-                            )}',
-                            '${escapeAttribute(
-                                application.oocAge ||
-                                application.age ||
-                                ""
-                            )}'
-                        )
-                    "
-                >
-                    ✏️ BEARBEITEN
-                </button>
-
-
-                <!-- LÖSCHEN -->
-
-                <button
-                    type="button"
-                    class="btn"
-                    style="
-                        background:#555;
-                        color:white;
-                        border:none;
-                    "
-                    onclick="
-                        deleteApplication(
-                            '${application.id}'
-                        )
-                    "
-                >
-                    🗑️ LÖSCHEN
-                </button>
-
-            </div>
-
-        </div>
-
-    `;
-
-}
-
-
-/* ========================= */
-/* STATUS ÄNDERN */
-/* ========================= */
-
-async function updateApplication(
-    id,
-    status
-){
-
-    if(!adminLoggedIn){
-
-        alert(
-            "❌ Kein Admin-Zugriff."
         );
 
-        return;
-
     }
+);
 
 
-    try{
+/* =========================
+   BEWERBUNG BEARBEITEN
+========================= */
 
-        const response =
-            await fetch(
-                "/api/applications/" + id,
-                {
-                    method:"PUT",
+app.put(
+    "/api/applications/:id",
+    (req, res) => {
 
-                    headers:{
-                        "Content-Type":
-                            "application/json"
-                    },
+        if (!isAdmin(req)) {
 
-                    body:JSON.stringify({
+            return res
+                .status(403)
+                .json({
 
-                        status:status
+                    error:
+                        "Keine Bruderschaft-Berechtigung."
 
-                    })
+                });
 
-                }
+        }
+
+
+        const application =
+            applications.find(
+                app =>
+                    app.id ===
+                    req.params.id
             );
 
 
-        if(response.ok){
+        if (!application) {
 
-            if(status === "angenommen"){
+            return res
+                .status(404)
+                .json({
 
-                alert(
-                    "✅ Bewerbung angenommen!"
-                );
+                    error:
+                        "Bewerbung nicht gefunden."
 
-            }else{
+                });
 
-                alert(
-                    "❌ Bewerbung abgelehnt!"
-                );
+        }
+
+
+        if (
+            req.body.icName !==
+            undefined
+        ) {
+
+            application.icName =
+                String(
+                    req.body.icName
+                ).trim();
+
+        }
+
+
+        if (
+            req.body.oocAge !==
+            undefined
+        ) {
+
+            application.oocAge =
+                String(
+                    req.body.oocAge
+                ).trim();
+
+        }
+
+
+        if (
+            req.body.status !==
+            undefined
+        ) {
+
+            const allowedStatuses = [
+
+                "offen",
+
+                "angenommen",
+
+                "abgelehnt"
+
+            ];
+
+
+            if (
+                allowedStatuses.includes(
+                    req.body.status
+                )
+            ) {
+
+                application.status =
+                    req.body.status;
 
             }
 
+        }
 
-            loadApplications();
 
-        }else{
+        res.json({
 
-            alert(
-                "❌ Status konnte nicht geändert werden."
-            );
+            success:
+                true,
+
+            application:
+                application
+
+        });
+
+    }
+);
+
+
+/* =========================
+   BEWERBUNG LÖSCHEN
+========================= */
+
+app.delete(
+    "/api/applications/:id",
+    (req, res) => {
+
+        if (!isAdmin(req)) {
+
+            return res
+                .status(403)
+                .json({
+
+                    error:
+                        "Keine Bruderschaft-Berechtigung."
+
+                });
 
         }
 
 
-    }catch(error){
-
-        console.error(error);
-
-        alert(
-            "❌ Serverfehler."
-        );
-
-    }
-
-}
-
-
-/* ========================= */
-/* BEWERBUNG BEARBEITEN */
-/* ========================= */
-
-async function editApplication(
-    id,
-    oldName,
-    oldAge
-){
-
-    if(!adminLoggedIn){
-
-        alert(
-            "❌ Kein Admin-Zugriff."
-        );
-
-        return;
-
-    }
-
-
-    const newName =
-        prompt(
-            "IC-Name bearbeiten:",
-            oldName
-        );
-
-
-    if(newName === null){
-
-        return;
-
-    }
-
-
-    const newAge =
-        prompt(
-            "OOC-Alter bearbeiten:",
-            oldAge
-        );
-
-
-    if(newAge === null){
-
-        return;
-
-    }
-
-
-    try{
-
-        const response =
-            await fetch(
-                "/api/applications/" + id,
-                {
-                    method:"PUT",
-
-                    headers:{
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:JSON.stringify({
-
-                        icName:
-                            newName.trim(),
-
-                        oocAge:
-                            newAge.trim()
-
-                    })
-
-                }
+        const index =
+            applications.findIndex(
+                app =>
+                    app.id ===
+                    req.params.id
             );
 
 
-        if(response.ok){
+        if (index === -1) {
 
-            alert(
-                "✏️ Bewerbung wurde bearbeitet!"
-            );
+            return res
+                .status(404)
+                .json({
 
-            loadApplications();
+                    error:
+                        "Bewerbung nicht gefunden."
 
-        }else{
-
-            alert(
-                "❌ Bearbeitung fehlgeschlagen."
-            );
+                });
 
         }
 
 
-    }catch(error){
+        applications.splice(
+            index,
+            1
+        );
 
-        console.error(error);
 
-        alert(
-            "❌ Serverfehler."
+        res.json({
+
+            success:
+                true
+
+        });
+
+    }
+);
+
+
+/* =========================
+   SERVER STARTEN
+========================= */
+
+app.listen(
+    PORT,
+    () => {
+
+        console.log(
+            `Shadow Ranch läuft auf Port ${PORT}`
         );
 
     }
-
-}
-
-
-/* ========================= */
-/* BEWERBUNG LÖSCHEN */
-/* ========================= */
-
-async function deleteApplication(
-    id
-){
-
-    if(!adminLoggedIn){
-
-        alert(
-            "❌ Kein Admin-Zugriff."
-        );
-
-        return;
-
-    }
-
-
-    const confirmDelete =
-        confirm(
-            "⚠️ Bewerbung wirklich löschen?"
-        );
-
-
-    if(!confirmDelete){
-
-        return;
-
-    }
-
-
-    try{
-
-        const response =
-            await fetch(
-                "/api/applications/" + id,
-                {
-                    method:"DELETE"
-                }
-            );
-
-
-        if(response.ok){
-
-            alert(
-                "🗑️ Bewerbung gelöscht!"
-            );
-
-            loadApplications();
-
-        }else{
-
-            alert(
-                "❌ Bewerbung konnte nicht gelöscht werden."
-            );
-
-        }
-
-
-    }catch(error){
-
-        console.error(error);
-
-        alert(
-            "❌ Serverfehler."
-        );
-
-    }
-
-}
-
-
-/* ========================= */
-/* HTML SICHER MACHEN */
-/* ========================= */
-
-function escapeHtml(value){
-
-    return String(value)
-
-        .replaceAll(
-            "&",
-            "&amp;"
-        )
-
-        .replaceAll(
-            "<",
-            "&lt;"
-        )
-
-        .replaceAll(
-            ">",
-            "&gt;"
-        )
-
-        .replaceAll(
-            '"',
-            "&quot;"
-        )
-
-        .replaceAll(
-            "'",
-            "&#039;"
-        );
-
-}
-
-
-function escapeAttribute(value){
-
-    return String(value)
-
-        .replaceAll(
-            "\\",
-            "\\\\"
-        )
-
-        .replaceAll(
-            "'",
-            "\\'"
-        )
-
-        .replaceAll(
-            "\n",
-            "\\n"
-        )
-
-        .replaceAll(
-            "\r",
-            ""
-        );
-
-}
-
-</script>
+);
