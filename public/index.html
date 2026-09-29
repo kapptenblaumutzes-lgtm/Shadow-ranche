@@ -1,167 +1,374 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHADOW RANCH | GTA RP</title>
+<style>
+:root{--bg:#080807;--panel:#11100e;--gold:#b98a55;--gold2:#e0b77b;--text:#eee8df;--muted:#aaa39a;--line:#2a241d}
+*{box-sizing:border-box;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+header{position:fixed;top:0;left:0;right:0;z-index:10;background:rgba(8,8,7,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav{max-width:1200px;margin:auto;display:flex;align-items:center;justify-content:space-between;padding:10px 22px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:2px}.brand img{width:45px;height:45px;object-fit:contain}.brand span{color:var(--gold2)}
+nav a{color:#ddd;text-decoration:none;margin-left:18px;font-size:14px;font-weight:700}nav a:hover{color:var(--gold2)}
+.hero{min-height:100vh;display:grid;place-items:center;text-align:center;padding:120px 20px 70px;position:relative;overflow:hidden;background:linear-gradient(rgba(0,0,0,.58),rgba(0,0,0,.84)),url('assets/ranch.jpg') center/cover}
+.hero:after{content:"";position:absolute;inset:auto 0 0;height:180px;background:linear-gradient(transparent,var(--bg))}
+.hero-content{position:relative;z-index:1;max-width:850px}.hero-logo{width:min(420px,85vw);filter:drop-shadow(0 10px 35px #000)}
+h1{font-size:clamp(38px,7vw,78px);margin:12px 0 4px;letter-spacing:5px}.gold{color:var(--gold2)}
+.hero p{color:#d4cec5;font-size:18px}.btn{display:inline-block;padding:13px 22px;border:1px solid var(--gold);color:#fff;text-decoration:none;margin:8px;border-radius:4px;font-weight:800}.btn.primary{background:linear-gradient(135deg,#8e6338,#c79a61);color:#090807}
+section{max-width:1200px;margin:auto;padding:90px 22px}.title{text-align:center;margin-bottom:40px}.title h2{font-size:36px;margin:0 0 8px;letter-spacing:2px}.title p{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+.card{background:linear-gradient(145deg,#15130f,#0e0d0b);border:1px solid var(--line);padding:24px;border-radius:8px;box-shadow:0 12px 30px #0005}
+.card h3{margin-top:0;color:var(--gold2)}.card p,.card li{color:#c5bfb7;line-height:1.65}
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}.gallery img{width:100%;height:240px;object-fit:cover;border-radius:7px;border:1px solid var(--line);transition:.25s}.gallery img:hover{transform:scale(1.02);border-color:var(--gold)}
+.rank{position:relative;padding-left:62px}.rank .num{position:absolute;left:18px;top:20px;width:32px;height:32px;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center;color:var(--gold2);font-weight:900}
+form{max-width:800px;margin:auto;background:#0f0e0c;border:1px solid var(--line);padding:28px;border-radius:8px}
+label{display:block;margin:14px 0 7px;color:#ddd;font-weight:700}input,textarea,select{width:100%;padding:13px;background:#090908;color:#eee;border:1px solid #393229;border-radius:4px}textarea{min-height:120px;resize:vertical}.submit{margin-top:18px;width:100%;cursor:pointer}
+.notice{text-align:center;color:var(--muted);font-size:13px;margin-top:10px}
+footer{border-top:1px solid var(--line);padding:30px 20px;text-align:center;color:#888;background:#060605}
+@media(max-width:800px){nav{display:none}.nav{justify-content:center}.hero{min-height:90vh}}
 
-    <title>Shadow Ranch</title>
-
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background: #0b0b0b;
-            color: white;
-        }
-
-        header {
-            height: 80px;
-            background: #111;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 50px;
-            border-bottom: 1px solid #292929;
-        }
-
-        .logo {
-            font-size: 25px;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
-
-        nav {
-            display: flex;
-            gap: 25px;
-        }
-
-        nav a {
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        nav a:hover {
-            color: #aaa;
-        }
-
-        .hero {
-            min-height: calc(100vh - 80px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 40px 20px;
-            background:
-                linear-gradient(rgba(0,0,0,.65), rgba(0,0,0,.9)),
-                url("https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=2000&q=80")
-                center/cover;
-        }
-
-        .hero-content {
-            max-width: 800px;
-        }
-
-        .hero h1 {
-            font-size: 65px;
-            margin-bottom: 20px;
-            letter-spacing: 5px;
-        }
-
-        .hero p {
-            font-size: 20px;
-            color: #ccc;
-            margin-bottom: 35px;
-        }
-
-        .buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .button {
-            display: inline-block;
-            padding: 15px 28px;
-            background: white;
-            color: black;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: bold;
-        }
-
-        .button:hover {
-            background: #ddd;
-        }
-
-        .button.dark {
-            background: #222;
-            color: white;
-            border: 1px solid #444;
-        }
-
-        footer {
-            text-align: center;
-            padding: 25px;
-            background: #111;
-            color: #777;
-        }
-
-        @media (max-width: 700px) {
-            header {
-                padding: 0 20px;
-            }
-
-            nav {
-                display: none;
-            }
-
-            .hero h1 {
-                font-size: 42px;
-            }
-        }
-    </style>
+table td{padding:12px;border-bottom:1px solid #29231d;color:#cfc8bf}
+table tbody tr:hover{background:#17130f}
+ol{color:#c5bfb7;line-height:1.8}
+h4{color:#d0a66e;margin-bottom:8px}
+.admin-box{max-width:600px;margin:auto}.admin-head{display:flex;justify-content:space-between;align-items:center;gap:15px;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:18px}.application-card{display:flex;justify-content:space-between;gap:20px;align-items:center;background:#090908;border:1px solid var(--line);padding:18px;margin:12px 0;border-radius:7px}.application-card h3{margin:0 0 8px}.application-card p{margin:5px 0}.actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:7px}.actions .btn{margin:0;padding:9px 12px;font-size:12px}.accept{border-color:#4d8d5b!important}.reject,.danger{border-color:#8d4d4d!important}.status{font-weight:800}.status.angenommen{color:#70c77c}.status.abgelehnt{color:#e07070}.status.offen{color:var(--gold2)}
+@media(max-width:700px){.application-card{flex-direction:column;align-items:stretch}.actions{justify-content:flex-start}.admin-head{align-items:flex-start;flex-direction:column}}
+</style>
 </head>
-
 <body>
+<header><div class="nav">
+<div class="brand"><img src="assets/logo.png" alt="Shadow Ranch"><span>SHADOW RANCH</span></div>
+<nav>
+<a href="#start">START</a><a href="#bilder">BILDER</a><a href="#regeln">REGELWERK</a><a href="#sanktionen">SANKTIONEN</a><a href="#ränge">RÄNGE</a><a href="#bewerbung">BEWERBUNG</a><a href="#admin">ADMIN</a>
+</nav></div></header>
 
-<header>
-    <div class="logo">SHADOW RANCH</div>
+<section class="hero" id="start"><div class="hero-content">
+<img class="hero-logo" src="assets/logo.png" alt="Shadow Ranch Logo">
+<h1>SHADOW <span class="gold">RANCH</span></h1>
+<p>GTA RP • Loyalität • Zusammenhalt • Respekt</p>
+<a class="btn primary" href="#bewerbung">BEWERBEN</a><a class="btn" href="#regeln">REGELWERK</a>
+</div></section>
 
-    <nav>
-        <a href="/">Startseite</a>
-        <a href="#">Galerie</a>
-        <a href="#">Regelwerk</a>
-        <a href="#">Bewerbung</a>
-    </nav>
-</header>
+<section><div class="title"><h2>WILLKOMMEN BEI <span class="gold">SHADOW RANCH</span></h2><p>Die offizielle Fraktionsseite unserer GTA-RP-Fraktion.</p></div>
+<div class="grid">
+<div class="card"><h3>🤝 Zusammenhalt</h3><p>Wir stehen füreinander ein und arbeiten als Team.</p></div>
+<div class="card"><h3>🎯 Disziplin</h3><p>Klare Strukturen, Verantwortungen und einheitliches Auftreten.</p></div>
+<div class="card"><h3>🏜️ Shadow Ranch</h3><p>Unsere Ranch ist unser Zuhause. Respekt und Loyalität stehen an erster Stelle.</p></div>
+</div></section>
 
-<section class="hero">
-    <div class="hero-content">
+<section id="bilder"><div class="title"><h2>📸 <span class="gold">BILDER</span></h2><p>Einblicke in die Shadow Ranch.</p></div>
+<div class="gallery">
+<img src="assets/ranch.jpg" alt="Shadow Ranch Gebäude"><img src="assets/team.jpg" alt="Shadow Ranch Team"><img src="assets/gallery-1.jpg" alt="Shadow Ranch Gruppe"><img src="assets/gallery-2.jpg" alt="Shadow Ranch Mitglieder">
+</div></section>
 
-        <h1>SHADOW RANCH</h1>
+<section id="regeln"><div class="title">
+<h2>📜 <span class="gold">REGELWERK</span></h2>
+<p>Verhaltensregeln der Shadow Ranch – gültig für jedes Mitglied.</p></div>
 
-        <p>
-            Willkommen auf der offiziellen Webseite der Shadow Ranch.
-        </p>
+<div class="card">
+<h3>I. Zweck dieses Dokuments</h3>
+<p>Die Zugehörigkeit zu diesem Hotel endet nicht an seiner Schwelle. Wer für Shadow steht, trägt diese Verantwortung auch dann, wenn er das Anwesen längst verlassen hat — auf der Straße, im Gespräch mit Fremden, im Kreis der eigenen Familie. Dieses Dokument regelt, wie sich ein Mitglied außerhalb dieser Mauern zu verhalten hat.</p>
+<p>Die Regeln dieses Hotels schützen nicht nur den Ruf des Hotels, sondern auch jedes einzelne Mitglied. Nachlässigkeit nach draußen wirkt stets auf uns alle zurück.</p>
+</div>
 
-        <div class="buttons">
-            <a class="button" href="#">Bewerben</a>
-            <a class="button dark" href="#">Discord Login</a>
-        </div>
+<div class="card">
+<h3>II. Der oberste Grundsatz: Verschwiegenheit über die Zugehörigkeit</h3>
+<p>Kein Mitglied gibt sich gegenüber Außenstehenden als Angehöriger dieses Hotels zu erkennen. Dies gilt ausnahmslos — gegenüber Fremden, Bekannten, Freunden und Familie gleichermaßen.</p>
+<ul>
+<li>Der Name dieses Hotels wird gegenüber Unbeteiligten niemals ausgesprochen.</li>
+<li>Erkennungszeichen, Kleidung oder Gegenstände, die auf das Hotel hindeuten, werden außerhalb des Anwesens nicht offen getragen.</li>
+<li>Wer erkennbar mit dem Hotel in Verbindung gebracht wird, gefährdet nicht nur sich selbst, sondern jedes andere Mitglied.</li>
+</ul>
+</div>
 
-    </div>
-</section>
+<div class="card">
+<h3>III. Die Tarnung</h3>
+<p>Jedes Mitglied führt gegenüber der Außenwelt eine einfache, unauffällige Erklärung für seine Tätigkeit:</p>
+<p><strong>„Ich arbeite in einem Hotel.“</strong></p>
+<p>Diese Auskunft genügt. Sie ist wahr genug, um überzeugend zu wirken, und beiläufig genug, um kein weiteres Interesse zu wecken. Sie wird nicht ausgeschmückt, nicht widerlegt und nicht durch Details ergänzt, die nicht gefragt wurden.</p>
+<h4>Regeln für den Umgang mit Fragen</h4>
+<ul>
+<li>Auf die Frage nach dem Namen des Hotels wird ausweichend, aber höflich geantwortet.</li>
+<li>Auf Nachfragen zu Aufgaben oder Position wird knapp und beiläufig geantwortet.</li>
+<li>Wird hartnäckig weiter nachgefragt, wird das Gespräch höflich, aber bestimmt auf ein anderes Thema gelenkt.</li>
+<li>Widersprüchliche Angaben zur eigenen Tarnung sind zu vermeiden.</li>
+</ul>
+<h4>Beispielhafte Erwiderungen</h4>
+<p><em>„Wo arbeitest du?“ — „In einem Hotel, im gehobenen Bereich. Nichts, worüber ich viel erzählen dürfte — Diskretion gegenüber unseren Gästen gehört dazu.“</em></p>
+<p><em>„In welchem Hotel denn genau?“ — „Das behalte ich lieber für mich. Sie verstehen sicher, dass wir da vorsichtig sein müssen.“</em></p>
+<p><em>„Das klingt aber gut bezahlt für einen Hotelposten.“ — „Man wird für Zuverlässigkeit eben entsprechend entlohnt.“</em></p>
+</div>
 
-<footer>
-    © 2026 Shadow Ranch – Alle Rechte vorbehalten.
-</footer>
+<div class="card">
+<h3>IV. Verhalten in der Öffentlichkeit</h3>
+<ul>
+<li>Ein Mitglied verhält sich in der Öffentlichkeit stets zurückhaltend, gepflegt und kontrolliert.</li>
+<li>Auseinandersetzungen, Streit oder auffälliges Verhalten in der Öffentlichkeit sind zu vermeiden.</li>
+<li>Geschäfte des Hotels werden niemals in der Öffentlichkeit besprochen, auch nicht andeutungsweise.</li>
+<li>Alkohol und andere Genussmittel werden außerhalb des Hotels mit Maß konsumiert — Kontrollverlust in der Öffentlichkeit ist ein Risiko für das gesamte Hotel.</li>
+</ul>
+</div>
 
+<div class="card">
+<h3>V. Umgang mit Behörden</h3>
+<ul>
+<li>Gegenüber Behörden gilt dieselbe Tarnung wie gegenüber jedem anderen Außenstehenden.</li>
+<li>Es werden keine freiwilligen Angaben gemacht, die über die notwendigen Antworten hinausgehen.</li>
+<li>Fragen zu anderen Mitgliedern, zum Anwesen oder zu Geschäften des Hotels werden grundsätzlich nicht beantwortet.</li>
+<li>Im Zweifel gilt: lieber schweigen als eine unbedachte Antwort geben.</li>
+<li>Jeder Kontakt mit Behörden, der das Hotel betreffen könnte, wird der Hotelleitung im Anschluss diskret gemeldet.</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>VI. Kontakt zu anderen Mitgliedern außerhalb des Hotels</h3>
+<ul>
+<li>Trifft man ein anderes Mitglied in der Öffentlichkeit, begegnet man sich wie beiläufige Bekannte — nicht wie Verbündete.</li>
+<li>Die Zugehörigkeit zum Hotel wird auch untereinander in der Öffentlichkeit nicht angesprochen.</li>
+<li>Verabredungen und Absprachen zwischen Mitgliedern finden nicht öffentlich sichtbar statt.</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>VII. Familie, Freunde und nahestehende Personen</h3>
+<p>Auch im engsten Kreis gilt die Tarnung uneingeschränkt. Nähe ist kein Grund für Ausnahmen — sie ist im Gegenteil das größte Risiko, da Vertrauen zu Nachlässigkeit verleitet.</p>
+<ul>
+<li>Familie und Freunde erhalten dieselbe Auskunft wie jeder Fremde: die Tätigkeit in einem Hotel.</li>
+<li>Persönliche Sorgen oder Konflikte, die aus der Tätigkeit für das Hotel entstehen, werden nicht mit Außenstehenden geteilt.</li>
+<li>Wer eine nahestehende Person für das Hotel in Betracht zieht, spricht dies ausschließlich mit der Hotelleitung ab — niemals eigenmächtig.</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>VIII. Schriftliche und digitale Kommunikation</h3>
+<ul>
+<li>Der Name des Hotels, seine Mitglieder oder seine Angelegenheiten werden niemals schriftlich gegenüber Außenstehenden erwähnt.</li>
+<li>Nachrichten, die das Hotel betreffen, werden so knapp wie möglich gehalten.</li>
+<li>Im Zweifel gilt: Was nicht geschrieben wird, kann auch nicht gegen das Hotel verwendet werden.</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>IX. Schlusswort</h3>
+<p>Die Stärke dieses Hotels liegt nicht allein in dem, was hinter seinen Mauern geschieht, sondern ebenso in dem, was draußen ungesagt bleibt. Ein Mitglied, das sich draußen zu erkennen gibt, öffnet eine Tür, die sich nicht wieder schließen lässt. Verschwiegenheit ist keine Last,<section id="sanktionen"><div class="title">
+<h2>⚠️ <span class="gold">SANKTIONEN</span></h2>
+<p>Sanktionskatalog der Shadow Ranch – gültig für jedes Mitglied.</p></div>
+
+<div class="card">
+<h3>I. Zweck dieses Dokuments</h3>
+<p>Ordnung ohne Konsequenz ist nur ein Wort. Dieser Katalog legt fest, welche Sanktion auf welches Vergehen folgt, und sorgt dafür, dass jedes Mitglied — gleich welchen Ranges — weiß, woran es sich zu halten hat. Die Strafen steigen mit der Zahl der Vergehen, denn Nachsicht bei Wiederholung schwächt die Ordnung des ganzen Hauses.</p>
+</div>
+
+<div class="card">
+<h3>II. Grundsätze der Sanktionierung</h3>
+<ul>
+<li>Über jede Sanktion entscheidet der Richter im Benehmen mit der Hotelleitung.</li>
+<li>Geldstrafen sind unverzüglich zu begleichen — Aufschub wird selbst zum Vergehen.</li>
+<li>Ein „Bloodout“ ist die höchste Stufe der Sanktion und stellt das endgültige Ende der Zugehörigkeit zu diesem Haus dar.</li>
+<li>Bei besonders schwerer Verfehlung kann der Richter die Reihenfolge der Stufen verkürzen oder überspringen.</li>
+<li>Jedes Vergehen wird vermerkt — die Zählung setzt sich über die gesamte Zugehörigkeit fort, nicht nur innerhalb eines Zeitraums.</li>
+</ul>
+</div>
+
+<div class="card" style="overflow-x:auto">
+<h3>III. Der Katalog</h3>
+<table style="width:100%;border-collapse:collapse;min-width:760px">
+<thead><tr>
+<th style="text-align:left;padding:12px;border-bottom:1px solid #4a3b2b;color:#e0b77b">Vergehen</th>
+<th style="padding:12px;border-bottom:1px solid #4a3b2b;color:#e0b77b">1. Verstoß</th>
+<th style="padding:12px;border-bottom:1px solid #4a3b2b;color:#e0b77b">2. Verstoß</th>
+<th style="padding:12px;border-bottom:1px solid #4a3b2b;color:#e0b77b">3. Verstoß</th>
+</tr></thead>
+<tbody>
+<tr><td>Befehl nicht befolgen</td><td>100.000 $</td><td>300.000 $</td><td>Bloodout</td></tr>
+<tr><td>Gegenseitig schlagen</td><td>100.000 $</td><td>300.000 $</td><td>Bloodout</td></tr>
+<tr><td>Unprofessionelles Auftreten</td><td>300.000 $</td><td>600.000 $</td><td>Bloodout</td></tr>
+<tr><td>Beleidigen</td><td>200.000 $</td><td>500.000 $</td><td>Bloodout</td></tr>
+<tr><td>Nicht Einhalten der Wochenabgabe</td><td>2x Wochenabgabe</td><td>2x Wochenabgabe + 100.000 $</td><td>Bloodout</td></tr>
+<tr><td>Nicht Einhalten einer Sanktion</td><td>2x der Sanktion</td><td>2x der Sanktion + 100.000 $</td><td>Bloodout</td></tr>
+<tr><td>Nicht loyal</td><td>Bloodout</td><td>—</td><td>—</td></tr>
+<tr><td>Die Ransh offen lassen</td><td>100.000 $</td><td>300.000 $</td><td>Bloodout</td></tr>
+<tr><td>Keine passende Kleidung tragen</td><td>100.000 $</td><td>300.000 $</td><td>Bloodout</td></tr>
+<tr><td>Nicht Einhalten der Fahrzeug-Farben</td><td>100.000 $</td><td>300.000 $</td><td>Bloodout</td></tr>
+<tr><td>Pitten während der Kolonnenfahrt</td><td>100.000 $</td><td>500.000 $</td><td>Bloodout</td></tr>
+<tr><td>Gewalt auf dem Anwesen (Ransh)</td><td>1.000.000 $</td><td>2.000.000 $</td><td>Bloodout</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="card">
+<h3>IV. Erläuterung: Nicht loyal</h3>
+<p>Untreue gegenüber diesem Haus kennt keine Stufen. Wer sich als illoyal erweist, hat sich bereits selbst aus der Gemeinschaft dieses Hotels entfernt — die Sanktion vollzieht diese Tatsache nur noch.</p>
+</div>
+
+<div class="card">
+<h3>V. Vollzug der Sanktion</h3>
+<ol>
+<li>Das Vergehen wird dem Richter gemeldet oder von ihm selbst festgestellt.</li>
+<li>Der Richter prüft den Sachverhalt und legt die zutreffende Stufe fest.</li>
+<li>Die Sanktion wird dem Mitglied unter vier Augen mitgeteilt.</li>
+<li>Geldstrafen sind innerhalb der von der Hotelleitung gesetzten Frist zu begleichen.</li>
+<li>Ein Bloodout wird von der Hotelleitung vollstreckt, sobald der Richter sein Urteil bestätigt hat.</li>
+</ol>
+</div>
+
+<div class="card">
+<h3>VI. Schlusswort</h3>
+<p>Dieser Katalog ist kein Ausdruck von Misstrauen, sondern von Klarheit. Wer die Regeln dieses Hauses kennt, kann sich nicht auf Unwissenheit berufen — und wer sich an sie hält, hat nichts zu befürchten.</p>
+<p><em>Ende des Sanktionskatalogs — gültig für jedes Mitglied, ohne Ausnahme.</em></p>
+</div>
+</section>rhalten oder wiederholten Verstößen.</p></div>
+<div class="card"><h3>4 · Ausschluss</h3><p>Bei besonders schweren Verstößen oder fehlender Zusammenarbeit.</p></div>
+</div></section>
+
+<section id="ränge"><div class="title"><h2>🏅 <span class="gold">RÄNGE</span></h2><p>Die Rangstruktur der Shadow Ranch.</p></div>
+<div class="grid">
+<div class="card rank"><div class="num">1</div><h3>Läufer</h3><p>Rang 1</p></div>
+<div class="card rank"><div class="num">2</div><h3>Vertrauter</h3><p>Rang 2</p></div>
+<div class="card rank"><div class="num">3</div><h3>Shadow</h3><p>Rang 3</p></div>
+<div class="card rank"><div class="num">4</div><h3>Shadow</h3><p>Rang 3</p></div>
+<div class="card rank"><div class="num">5</div><h3>Vollstrecker</h3><p>Rang 5</p></div>
+<div class="card rank"><div class="num">6</div><h3>Klinge</h3><p>Rang 6</p></div>
+<div class="card rank"><div class="num">7</div><h3>Kreis</h3><p>Rang 7</p></div>
+<div class="card rank"><div class="num">8</div><h3>Innerer Kreis</h3><p>Rang 8</p></div>
+<div class="card rank"><div class="num">9</div><h3>Buchhalter</h3><p>Rang 9</p></div>
+<div class="card rank"><div class="num">10</div><h3>Familien Rat</h3><p>Rang 10</p></div>
+<div class="card rank"><div class="num">11</div><h3>Richter</h3><p>Rang 11</p></div>
+<div class="card rank"><div class="num">12</div><h3>Oberhaupt</h3><p>Rang 12</p></div>
+</div></section>
+
+<section id="bewerbung"><div class="title"><h2>📝 <span class="gold">BEWERBUNG</span></h2><p>Bewirb dich bei der Shadow Ranch.</p></div>
+<form onsubmit="sendApplication(event)">
+<label>IC-Name</label>
+<input id="name" placeholder="Dein Charaktername" required>
+
+<label>OOC-Alter</label>
+<input id="age" type="number" min="13" placeholder="Dein Alter außerhalb von RP" required>
+
+<button class="btn primary submit" type="submit">BEWERBUNG ABSENDEN</button>
+<div class="notice">Deine Bewerbung wird im Bewerbungsbereich gespeichert.</div>
+</form></section>
+
+<section id="admin"><div class="title"><h2>🔐 <span class="gold">ADMIN PANEL</span></h2><p>Nur für die Shadow-Ranch-Leitung.</p></div>
+<div id="adminLogin" class="card admin-box">
+<label>Admin-Code</label>
+<input id="adminCode" type="password" placeholder="Code eingeben">
+<button class="btn primary" onclick="loginAdmin()">ADMIN PANEL ÖFFNEN</button>
+<div class="notice">Der Admin-Code wird sicher auf dem Server geprüft.</div>
+</div>
+<div id="adminPanel" class="card" style="display:none">
+<div class="admin-head"><div><h3>Bewerbungen</h3><p id="appCount" class="notice" style="text-align:left;margin:0"></p></div><button class="btn" onclick="logoutAdmin()">ABMELDEN</button></div>
+<div id="applications"></div>
+</div></section>
+
+<footer>© 2026 SHADOW RANCH · GTA RP · Alle Rechte vorbehalten</footer>
+<script>
+let currentUser = null;
+let applicationsCache = [];
+
+async function api(url, options={}) {
+  const res = await fetch(url, {headers:{'Content-Type':'application/json', ...(options.headers||{})}, ...options});
+  const data = await res.json().catch(()=>({}));
+  if (!res.ok) throw new Error(data.error || 'Fehler');
+  return data;
+}
+
+async function loadMe(){
+  try {
+    const data = await api('/api/me');
+    currentUser = data.user;
+    renderAuth();
+    if(currentUser && currentUser.isBruderschaft) showBruderschaft();
+    else if(currentUser) showBurgerView();
+  } catch(e) { currentUser=null; renderAuth(); }
+}
+
+function renderAuth(){
+  let el=document.getElementById('authArea');
+  if(!el){
+    el=document.createElement('div'); el.id='authArea'; el.style.cssText='position:fixed;right:18px;bottom:18px;z-index:30'; document.body.appendChild(el);
+  }
+  if(!currentUser){
+    el.innerHTML='<a class="btn primary" href="/auth/discord">🔵 MIT DISCORD ANMELDEN</a>';
+  } else {
+    const role=currentUser.isBruderschaft?'🛡️ Bruderschaft':'👤 Bürger';
+    el.innerHTML='<div class="card" style="padding:12px 16px"><b>'+escapeHtml(currentUser.username)+'</b><br><span class="notice">'+role+'</span> · <a href="/auth/logout" style="color:#e0b77b">Abmelden</a></div>';
+  }
+}
+
+function showBurgerView(){
+  const section=document.getElementById('bewerbung');
+  if(section) section.style.display='block';
+  const admin=document.getElementById('admin');
+  if(admin) admin.style.display='none';
+}
+function showBruderschaft(){
+  const section=document.getElementById('bewerbung');
+  if(section) section.style.display='block';
+  const admin=document.getElementById('admin');
+  if(admin) admin.style.display='block';
+}
+
+async function sendApplication(e){
+  e.preventDefault();
+  if(!currentUser){ alert('Bitte zuerst mit Discord anmelden.'); return; }
+  const name=document.getElementById('name').value.trim();
+  const age=document.getElementById('age').value.trim();
+  try{
+    await api('/api/applications',{method:'POST',body:JSON.stringify({name,age})});
+    e.target.reset();
+    alert('Bewerbung erfolgreich abgeschickt!');
+  }catch(err){ alert(err.message); }
+}
+
+async function loginAdmin(){
+  const code=document.getElementById('adminCode').value;
+  try{
+    await api('/api/admin/login',{method:'POST',body:JSON.stringify({code})});
+    document.getElementById('adminCode').value='';
+    showAdmin();
+  }catch(err){ alert(err.message); }
+}
+async function logoutAdmin(){
+  await api('/api/admin/logout',{method:'POST'}).catch(()=>{});
+  document.getElementById('adminPanel').style.display='none';
+  document.getElementById('adminLogin').style.display='block';
+}
+async function showAdmin(){
+  if(!currentUser?.isBruderschaft){ alert('Nur die Bruderschaft hat Zugriff.'); return; }
+  try{
+    await api('/api/admin/check');
+    document.getElementById('adminLogin').style.display='none';
+    document.getElementById('adminPanel').style.display='block';
+    renderApplications();
+  }catch(e){ document.getElementById('adminLogin').style.display='block'; document.getElementById('adminPanel').style.display='none'; }
+}
+async function updateStatus(id,status){
+  try{ await api('/api/applications/'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({status})}); renderApplications(); }
+  catch(e){ alert(e.message); }
+}
+async function deleteApplication(id){
+  if(!confirm('Diese Bewerbung wirklich löschen?')) return;
+  try{ await api('/api/applications/'+encodeURIComponent(id),{method:'DELETE'}); renderApplications(); }
+  catch(e){ alert(e.message); }
+}
+async function renderApplications(){
+  const box=document.getElementById('applications');
+  try{ applicationsCache=(await api('/api/applications')).applications; }
+  catch(e){ box.innerHTML='<div class="notice">'+escapeHtml(e.message)+'</div>'; return; }
+  document.getElementById('appCount').textContent=applicationsCache.length+' Bewerbung'+(applicationsCache.length===1?'':'en')+' gespeichert';
+  if(!applicationsCache.length){ box.innerHTML='<div class="notice" style="padding:25px">Noch keine Bewerbungen vorhanden.</div>'; return; }
+  box.innerHTML=applicationsCache.map(a=>`
+    <div class="application-card">
+      <div><h3>${escapeHtml(a.name)}</h3><p><b>Discord:</b> ${escapeHtml(a.discordUsername || 'Unbekannt')}</p><p><b>OOC-Alter:</b> ${escapeHtml(a.age)}</p><p><b>Eingegangen:</b> ${escapeHtml(a.date)}</p><p><b>Status:</b> <span class="status ${String(a.status).toLowerCase()}" >${escapeHtml(a.status)}</span></p></div>
+      <div class="actions"><button class="btn accept" onclick="updateStatus('${String(a.id).replace(/'/g,"\\'")}','Angenommen')">✓ ANNEHMEN</button><button class="btn reject" onclick="updateStatus('${String(a.id).replace(/'/g,"\\'")}','Abgelehnt')">✕ ABLEHNEN</button><button class="btn" onclick="updateStatus('${String(a.id).replace(/'/g,"\\'")}','Offen')">↺ OFFEN</button><button class="btn danger" onclick="deleteApplication('${String(a.id).replace(/'/g,"\\'")}')">LÖSCHEN</button></div>
+    </div>`).join('');
+}
+function escapeHtml(v){ return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+
+loadMe();
+</script>
 </body>
 </html>
