@@ -1,17 +1,19 @@
-<section id="adminPanel" style="display:none;">
+<section id="adminPanel">
 
   <div class="card">
+
     <h2>🔐 SHADOW RANCH – ADMIN PANEL</h2>
 
     <p class="notice">
-      Nur für berechtigte Mitglieder der Bruderschaft.
+      Gib den Admin-Code ein, um das Panel zu öffnen.
     </p>
 
     <div style="margin-top:20px;">
+
       <input
-        id="adminCode"
         type="password"
-        placeholder="Admin-Code eingeben"
+        id="adminCode"
+        placeholder="Admin-Code"
         autocomplete="off"
         style="
           width:100%;
@@ -23,47 +25,65 @@
 
       <button
         class="btn primary"
-        onclick="loginAdmin()"
         type="button"
+        onclick="loginAdmin()"
       >
         🔓 ADMIN ÖFFNEN
       </button>
+
     </div>
 
-    <div id="adminContent" style="display:none; margin-top:25px;">
+    <div
+      id="adminContent"
+      style="display:none; margin-top:25px;"
+    >
 
       <h3>📋 Bewerbungen</h3>
 
       <div id="applicationsList">
-        <p class="notice">Bewerbungen werden geladen...</p>
+
+        <p class="notice">
+          Bewerbungen werden geladen...
+        </p>
+
       </div>
 
     </div>
+
   </div>
 
 </section>
+
 
 <script>
 
 const ADMIN_CODE = "2580";
 
+
 function loginAdmin(){
 
     const input = document.getElementById("adminCode");
+
     const content = document.getElementById("adminContent");
 
+
     if(!input){
-        alert("❌ Admin-Feld wurde nicht gefunden.");
+
+        alert("❌ Admin-Code-Feld nicht gefunden!");
+
         return;
+
     }
+
 
     const code = input.value.trim();
 
+
     if(code === ADMIN_CODE){
 
-        alert("✅ Admin-Zugang erfolgreich!");
-
         content.style.display = "block";
+
+        alert("✅ Admin-Zugang erfolgreich!");
 
         loadApplications();
 
@@ -72,21 +92,28 @@ function loginAdmin(){
         alert("❌ Falscher Admin-Code!");
 
         input.value = "";
+
         input.focus();
 
     }
+
 }
 
 
 async function loadApplications(){
 
-    const list = document.getElementById("applicationsList");
+    const list =
+        document.getElementById("applicationsList");
+
 
     if(!list) return;
 
+
     try{
 
-        const response = await fetch("/api/applications");
+        const response =
+            await fetch("/api/applications");
+
 
         if(!response.ok){
 
@@ -97,11 +124,16 @@ async function loadApplications(){
             `;
 
             return;
+
         }
 
-        const applications = await response.json();
 
-        if(!applications || applications.length === 0){
+        const applications =
+            await response.json();
+
+
+        if(!applications ||
+           applications.length === 0){
 
             list.innerHTML = `
                 <p class="notice">
@@ -110,25 +142,38 @@ async function loadApplications(){
             `;
 
             return;
+
         }
 
-        list.innerHTML = applications.map(app => `
 
-            <div class="card" style="margin-top:15px;">
+        list.innerHTML =
+            applications.map(app => `
+
+            <div
+                class="card"
+                style="margin-top:15px;"
+            >
 
                 <h3>
-                    👤 ${escapeHtml(app.name || "Unbekannt")}
+                    👤 ${escapeHtml(
+                        app.name || "Unbekannt"
+                    )}
                 </h3>
 
                 <p>
                     <b>OOC-Alter:</b>
-                    ${escapeHtml(app.age || "-")}
+                    ${escapeHtml(
+                        app.age || "-"
+                    )}
                 </p>
 
                 <p>
                     <b>Status:</b>
-                    ${escapeHtml(app.status || "Offen")}
+                    ${escapeHtml(
+                        app.status || "Offen"
+                    )}
                 </p>
+
 
                 <div style="margin-top:15px;">
 
@@ -139,10 +184,16 @@ async function loadApplications(){
                             color:white;
                             border:none;
                         "
-                        onclick="updateApplication('${app.id}','accepted')"
+                        onclick="
+                            updateApplication(
+                                '${app.id}',
+                                'accepted'
+                            )
+                        "
                     >
                         ✅ ANNEHMEN
                     </button>
+
 
                     <button
                         class="btn"
@@ -151,14 +202,24 @@ async function loadApplications(){
                             color:white;
                             border:none;
                         "
-                        onclick="updateApplication('${app.id}','rejected')"
+                        onclick="
+                            updateApplication(
+                                '${app.id}',
+                                'rejected'
+                            )
+                        "
                     >
                         ❌ ABLEHNEN
                     </button>
 
+
                     <button
                         class="btn"
-                        onclick="deleteApplication('${app.id}')"
+                        onclick="
+                            deleteApplication(
+                                '${app.id}'
+                            )
+                        "
                     >
                         🗑️ LÖSCHEN
                     </button>
@@ -169,107 +230,158 @@ async function loadApplications(){
 
         `).join("");
 
+
     }catch(error){
 
         console.error(error);
+
 
         list.innerHTML = `
             <p class="notice">
                 ❌ Fehler beim Laden der Bewerbungen.
             </p>
         `;
+
     }
+
 }
 
 
-async function updateApplication(id,status){
+async function updateApplication(
+    id,
+    status
+){
 
     try{
 
-        const response = await fetch(
-            "/api/applications/" + id,
-            {
-                method:"PUT",
+        const response =
+            await fetch(
+                "/api/applications/" + id,
+                {
+                    method:"PUT",
 
-                headers:{
-                    "Content-Type":"application/json"
-                },
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
 
-                body:JSON.stringify({
-                    status:status
-                })
+                    body:JSON.stringify({
+                        status:status
+                    })
+                }
+            );
+
+
+        if(response.ok){
+
+            if(status === "accepted"){
+
+                alert(
+                    "✅ Bewerbung angenommen!"
+                );
+
+            }else{
+
+                alert(
+                    "❌ Bewerbung abgelehnt!"
+                );
+
             }
-        );
+
+
+            loadApplications();
+
+        }else{
+
+            alert(
+                "❌ Status konnte nicht geändert werden."
+            );
+
+        }
+
+
+    }catch(error){
+
+        console.error(error);
+
+        alert("❌ Serverfehler.");
+
+    }
+
+}
+
+
+async function deleteApplication(id){
+
+    if(
+        !confirm(
+            "Bewerbung wirklich löschen?"
+        )
+    ){
+
+        return;
+
+    }
+
+
+    try{
+
+        const response =
+            await fetch(
+                "/api/applications/" + id,
+                {
+                    method:"DELETE"
+                }
+            );
+
 
         if(response.ok){
 
             alert(
-                status === "accepted"
-                ? "✅ Bewerbung angenommen!"
-                : "❌ Bewerbung abgelehnt!"
+                "🗑️ Bewerbung gelöscht!"
             );
 
             loadApplications();
 
         }else{
 
-            alert("❌ Status konnte nicht geändert werden.");
+            alert(
+                "❌ Bewerbung konnte nicht gelöscht werden."
+            );
 
         }
+
 
     }catch(error){
 
         console.error(error);
 
         alert("❌ Serverfehler.");
-    }
-}
 
-
-async function deleteApplication(id){
-
-    if(!confirm("Bewerbung wirklich löschen?")){
-        return;
     }
 
-    try{
-
-        const response = await fetch(
-            "/api/applications/" + id,
-            {
-                method:"DELETE"
-            }
-        );
-
-        if(response.ok){
-
-            alert("🗑️ Bewerbung gelöscht!");
-
-            loadApplications();
-
-        }else{
-
-            alert("❌ Bewerbung konnte nicht gelöscht werden.");
-
-        }
-
-    }catch(error){
-
-        console.error(error);
-
-        alert("❌ Serverfehler.");
-    }
 }
 
 
 function escapeHtml(value){
 
     return String(value)
+
         .replaceAll("&","&amp;")
+
         .replaceAll("<","&lt;")
+
         .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
+
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
 
 }
 
