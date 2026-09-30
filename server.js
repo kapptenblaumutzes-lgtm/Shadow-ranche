@@ -2,111 +2,101 @@ require('dotenv').config();
 
 const express = require('express');
 const session = require('express-session');
-const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
+const fs = require('fs');
 const multer = require('multer');
 
 const app = express();
-const PORT = Number(process.env.PORT || 3000);
+const PORT = process.env.PORT || 3000;
 
-const DATA_FILE = path.join(__dirname, 'data', 'applications.json');
-const GALLERY_DIR = path.join(__dirname, 'public', 'assets', 'gallery');
+// =========================
+// GRUNDEINSTELLUNGEN
+// =========================
 
-fs.mkdirSync(GALLERY_DIR, { recursive: true });
-fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-
-if (!fs.existsSync(DATA_FILE)) {
-  fs.writeFileSync(DATA_FILE, '[]');
-}
-
-app.use(express.json({ limit: '50kb' }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'CHANGE_ME',
+    secret: process.env.SESSION_SECRET || 'shadow-ranch-secret',
     resave: false,
     saveUninitialized: false,
     cookie: {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 1000 * 60 * 60 * 24 * 7
+      secure: false,
+      maxAge: 1000 * 60 * 60 * 24
     }
   })
 );
 
-app.use(express.static(path.join(__dirname, 'public')));
+// =========================
+// ORDNER
+// =========================
 
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => {
-      cb(null, GALLERY_DIR);
-    },
+const publicPath = path.join(__dirname, 'public');
+const dataPath = path.join(__dirname, 'data');
+const galleryPath = path.join(publicPath, 'gallery');
 
-    filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
+if (!fs.existsSync(dataPath)) {
+  fs.mkdirSync(dataPath, { recursive: true });
+}
 
-      cb(
-        null,
-        `${Date.now()}-${crypto.randomBytes(5).toString('hex')}${ext}`
-      );
-    }
-  }),
+if (!fs.existsSync(galleryPath)) {
+  fs.mkdirSync(galleryPath, { recursive: true });
+}
 
-  limits: {
-    fileSize: 8 * 1024 * 1024
+// =========================
+// STATISCHE WEBSEITE
+// =========================
+
+app.use(express.static(publicPath));
+
+// =========================
+// BILDER-UPLOAD
+// =========================
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, galleryPath);
   },
 
-  fileFilter: (_req, file, cb) => {
-    const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+  filename: function (req, file, cb) {
+    const extension = path.extname(file.originalname);
+    const name =
+      Date.now() +
+      '-' +
+      Math.random().toString(36).substring(2, 10) +
+      extension;
 
-    cb(
-      null,
-      allowed.includes(path.extname(file.originalname).toLowerCase())
-    );
+    cb(null, name);
   }
 });
 
-function readApps() {
-  try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-  } catch {
-    return [];
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024
   }
-}
+});
 
-function writeApps(apps) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(apps, null, 2));
-}
+// =========================
+// STARTSEITE
+// =========================
 
-function requireLogin(req, res, next) {
-  if (!req.session.user) {
-    return res.status(401).json({
-      error: 'Bitte mit Discord anmelden.'
-    });
-  }
+app.get('/', (req, res) => {
+  res.sendFile(path.join(publicPath, 'index.html'));
+});
 
-  next();
-}
-
-function requireAdmin(req, res, next) {
-  if (!req.session.admin) {
-    return res.status(401).json({
-      error: 'Webseiten-Code erforderlich.'
-    });
-  }
-
-  next();
-}
-
-/* =========================
-   DISCORD LOGIN
-========================= */
+// =========================
+// LOGIN
+// =========================
 
 app.get('/login', (req, res) => {
   res.redirect('/auth/discord');
 });
+
+// =========================
+// DISCORD LOGIN
+// =========================
 
 app.get('/auth/discord', (req, res) => {
   if (
@@ -115,7 +105,7 @@ app.get('/auth/discord', (req, res) => {
     !process.env.DISCORD_REDIRECT_URI
   ) {
     return res.status(500).send(
-      'Discord OAuth ist noch nicht konfiguriert. Bitte die Render-Umgebungsvariablen überprüfen.'
+      'Discord-OAuth ist noch nicht konfiguriert. Bitte die Render-Umgebungsvariablen überprüfen.'
     );
   }
 
@@ -131,378 +121,351 @@ app.get('/auth/discord', (req, res) => {
   );
 });
 
-app.get('/auth/discord/callback', async (req, res) => {
-  try {
-    const code = req.query.code;
+// =========================
+// DISCORD CALLBACK
+// =========================
 
-    if (!code) {
-      return res.status(400).send(
-        'Discord-Anmeldung abgebrochen.'
-      );
-    }
+app.get(
+  ['/auth/discord/callback', '/callback'],
+  async (req, res) => {
+    try {
+      const code = req.query.code;
 
-    const tokenRes = await fetch(
-      'https://discord.com/api/oauth2/token',
-      {
-        method: 'POST',
-
-        headers: {
-          'Content-Type':
-            'application/x-www-form-urlencoded'
-        },
-
-        body: new URLSearchParams({
-          client_id: process.env.DISCORD_CLIENT_ID,
-          client_secret: process.env.DISCORD_CLIENT_SECRET,
-          grant_type: 'authorization_code',
-          code: code,
-          redirect_uri: process.env.DISCORD_REDIRECT_URI
-        })
+      if (!code) {
+        return res.status(400).send(
+          'Discord-Anmeldung abgebrochen.'
+        );
       }
-    );
 
-    const token = await tokenRes.json();
+      // Token holen
+      const tokenRes = await fetch(
+        'https://discord.com/api/oauth2/token',
+        {
+          method: 'POST',
 
-    if (!token.access_token) {
-      console.error('Discord Token Fehler:', token);
+          headers: {
+            'Content-Type':
+              'application/x-www-form-urlencoded'
+          },
 
-      return res.status(400).send(
-        'Discord-Token konnte nicht abgerufen werden.'
-      );
-    }
+          body: new URLSearchParams({
+            client_id:
+              process.env.DISCORD_CLIENT_ID,
 
-    const userRes = await fetch(
-      'https://discord.com/api/users/@me',
-      {
-        headers: {
-          Authorization: `Bearer ${token.access_token}`
+            client_secret:
+              process.env.DISCORD_CLIENT_SECRET,
+
+            grant_type:
+              'authorization_code',
+
+            code: code,
+
+            redirect_uri:
+              process.env.DISCORD_REDIRECT_URI
+          })
         }
+      );
+
+      const token = await tokenRes.json();
+
+      if (!token.access_token) {
+        console.error(
+          'Discord Token Fehler:',
+          token
+        );
+
+        return res.status(400).send(
+          'Discord-Token konnte nicht abgerufen werden.'
+        );
       }
-    );
 
-    const user = await userRes.json();
-
-    let roles = [];
-
-    if (process.env.DISCORD_GUILD_ID) {
-      const memberRes = await fetch(
-        `https://discord.com/api/users/@me/guilds/${process.env.DISCORD_GUILD_ID}/member`,
+      // Discord Benutzer holen
+      const userRes = await fetch(
+        'https://discord.com/api/users/@me',
         {
           headers: {
-            Authorization: `Bearer ${token.access_token}`
+            Authorization:
+              `Bearer ${token.access_token}`
           }
         }
       );
 
-      if (memberRes.ok) {
-        const member = await memberRes.json();
-        roles = member.roles || [];
+      const user = await userRes.json();
+
+      // =========================
+      // DISCORD ROLLEN
+      // =========================
+
+      let roles = [];
+
+      if (process.env.DISCORD_GUILD_ID) {
+        const memberRes = await fetch(
+          `https://discord.com/api/users/@me/guilds/${process.env.DISCORD_GUILD_ID}/member`,
+          {
+            headers: {
+              Authorization:
+                `Bearer ${token.access_token}`
+            }
+          }
+        );
+
+        if (memberRes.ok) {
+          const member = await memberRes.json();
+
+          roles = member.roles || [];
+        }
       }
+
+      // =========================
+      // BENUTZER SPEICHERN
+      // =========================
+
+      req.session.user = {
+        id: user.id,
+
+        username:
+          user.global_name ||
+          user.username,
+
+        avatar:
+          user.avatar || null,
+
+        roles: roles,
+
+        isBurger:
+          process.env.BURGER_ROLE_ID
+            ? roles.includes(
+                process.env.BURGER_ROLE_ID
+              )
+            : false,
+
+        isBruderschaft:
+          process.env.BRUDERSCHAFT_ROLE_ID
+            ? roles.includes(
+                process.env.BRUDERSCHAFT_ROLE_ID
+              )
+            : false
+      };
+
+      console.log(
+        'Discord Login:',
+        req.session.user.username
+      );
+
+      res.redirect('/#start');
+
+    } catch (err) {
+      console.error(
+        'Discord Login Fehler:',
+        err
+      );
+
+      res.status(500).send(
+        'Discord-Anmeldung fehlgeschlagen.'
+      );
     }
-
-    req.session.user = {
-      id: user.id,
-      username: user.global_name || user.username,
-      avatar: user.avatar || null,
-      roles: roles,
-
-      isBurger: process.env.BURGER_ROLE_ID
-        ? roles.includes(process.env.BURGER_ROLE_ID)
-        : false,
-
-      isBruderschaft: process.env.BRUDERSCHAFT_ROLE_ID
-        ? roles.includes(process.env.BRUDERSCHAFT_ROLE_ID)
-        : false
-    };
-
-    res.redirect('/#start');
-
-  } catch (err) {
-    console.error('Discord Login Fehler:', err);
-
-    res.status(500).send(
-      'Discord-Anmeldung fehlgeschlagen.'
-    );
   }
-});
+);
 
-app.get('/auth/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/#start');
-  });
-});
-
-/* =========================
-   USER
-========================= */
+// =========================
+// AKTUELLER BENUTZER
+// =========================
 
 app.get('/api/me', (req, res) => {
+  if (!req.session.user) {
+    return res.json({
+      loggedIn: false
+    });
+  }
+
   res.json({
-    user: req.session.user || null
+    loggedIn: true,
+    user: req.session.user
   });
 });
 
-/* =========================
-   BEWERBUNGEN
-========================= */
+// =========================
+// LOGOUT
+// =========================
 
-app.post(
-  '/api/applications',
-  requireLogin,
-  (req, res) => {
+app.get('/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.redirect('/');
+  });
+});
 
-    const name = String(
-      req.body.name || ''
-    ).trim();
-
-    const age = String(
-      req.body.age || ''
-    ).trim();
-
-    if (!name || !age) {
-      return res.status(400).json({
-        error: 'Bitte alle Pflichtfelder ausfüllen.'
-      });
-    }
-
-    const apps = readApps();
-
-    const application = {
-      id: crypto.randomUUID(),
-      name: name,
-      age: age,
-      status: 'Offen',
-      date: new Date().toLocaleString('de-DE'),
-      discordId: req.session.user.id,
-      discordUsername: req.session.user.username
-    };
-
-    apps.unshift(application);
-
-    writeApps(apps);
-
-    res.status(201).json({
-      application: application
-    });
-  }
-);
-
-/* =========================
-   ADMIN
-========================= */
+// =========================
+// ADMIN-CODE
+// =========================
 
 app.post('/api/admin/login', (req, res) => {
+  const { code } = req.body;
 
-  if (
-    String(req.body.code || '') !==
-    String(process.env.ADMIN_CODE || '7260')
-  ) {
-    return res.status(401).json({
-      error: 'Falscher Admin-Code.'
+  const adminCode =
+    process.env.ADMIN_CODE || '7260';
+
+  if (String(code) === String(adminCode)) {
+    req.session.admin = true;
+
+    return res.json({
+      success: true
     });
   }
 
-  req.session.admin = true;
-
-  res.json({
-    ok: true
+  res.status(401).json({
+    success: false,
+    message: 'Falscher Admin-Code.'
   });
 });
 
-app.post('/api/admin/logout', (req, res) => {
+// =========================
+// WEBSEITENVERWALTUNG-CODE
+// =========================
 
-  req.session.admin = false;
+app.post('/api/webverwaltung/login', (req, res) => {
+  const { code } = req.body;
 
-  res.json({
-    ok: true
-  });
-});
+  const websiteCode =
+    process.env.WEBSITE_CODE || '7260';
 
-app.get(
-  '/api/admin/check',
-  requireAdmin,
-  (req, res) => {
+  if (String(code) === String(websiteCode)) {
+    req.session.webverwaltung = true;
 
-    res.json({
-      ok: true
+    return res.json({
+      success: true
     });
   }
-);
 
-app.get(
-  '/api/applications',
-  requireLogin,
-  requireAdmin,
-  (req, res) => {
-
-    res.json({
-      applications: readApps()
-    });
-  }
-);
-
-/* =========================
-   GALERIE
-========================= */
-
-app.get('/api/gallery', (_req, res) => {
-
-  const files = fs
-    .readdirSync(GALLERY_DIR)
-    .filter(name =>
-      [
-        '.jpg',
-        '.jpeg',
-        '.png',
-        '.webp',
-        '.gif'
-      ].includes(
-        path.extname(name).toLowerCase()
-      )
-    )
-    .sort();
-
-  res.json({
-    images: files.map(
-      name =>
-        `/assets/gallery/${encodeURIComponent(name)}`
-    )
+  res.status(401).json({
+    success: false,
+    message: 'Falscher Code.'
   });
 });
+
+// =========================
+// GALERIE ANZEIGEN
+// =========================
+
+app.get('/api/gallery', (req, res) => {
+  try {
+    const files = fs
+      .readdirSync(galleryPath)
+      .filter(file => {
+        return /\.(jpg|jpeg|png|gif|webp)$/i.test(file);
+      });
+
+    const images = files.map(file => {
+      return '/gallery/' + file;
+    });
+
+    res.json(images);
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: 'Galerie konnte nicht geladen werden.'
+    });
+  }
+});
+
+// =========================
+// BILD HOCHLADEN
+// =========================
 
 app.post(
-  '/api/gallery',
-  requireAdmin,
+  '/api/gallery/upload',
   upload.single('image'),
   (req, res) => {
 
+    if (
+      !req.session.admin &&
+      !req.session.webverwaltung
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: 'Keine Berechtigung.'
+      });
+    }
+
     if (!req.file) {
       return res.status(400).json({
-        error:
-          'Bitte eine Bilddatei (JPG, PNG, WEBP oder GIF) auswählen.'
+        success: false,
+        message: 'Kein Bild ausgewählt.'
       });
     }
-
-    res.status(201).json({
-      ok: true,
-      image:
-        `/assets/gallery/${encodeURIComponent(
-          req.file.filename
-        )}`
-    });
-  }
-);
-
-app.delete(
-  '/api/gallery/:name',
-  requireAdmin,
-  (req, res) => {
-
-    const name = path.basename(
-      req.params.name
-    );
-
-    const file = path.join(
-      GALLERY_DIR,
-      name
-    );
-
-    if (!fs.existsSync(file)) {
-      return res.status(404).json({
-        error: 'Bild nicht gefunden.'
-      });
-    }
-
-    fs.unlinkSync(file);
 
     res.json({
-      ok: true
+      success: true,
+      image: '/gallery/' + req.file.filename
     });
   }
 );
 
-/* =========================
-   BEWERBUNGEN VERWALTEN
-========================= */
+// =========================
+// BILD LÖSCHEN
+// =========================
 
-app.patch(
-  '/api/applications/:id',
-  requireLogin,
-  requireAdmin,
-  (req, res) => {
+app.delete('/api/gallery/delete', (req, res) => {
 
-    const status = String(
-      req.body.status || ''
+  if (
+    !req.session.admin &&
+    !req.session.webverwaltung
+  ) {
+    return res.status(403).json({
+      success: false,
+      message: 'Keine Berechtigung.'
+    });
+  }
+
+  const { filename } = req.body;
+
+  if (!filename) {
+    return res.status(400).json({
+      success: false,
+      message: 'Kein Bild angegeben.'
+    });
+  }
+
+  const cleanFilename =
+    path.basename(filename);
+
+  const filePath =
+    path.join(
+      galleryPath,
+      cleanFilename
     );
 
-    if (
-      ![
-        'Offen',
-        'Angenommen',
-        'Abgelehnt'
-      ].includes(status)
-    ) {
-      return res.status(400).json({
-        error: 'Ungültiger Status.'
-      });
-    }
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({
+      success: false,
+      message: 'Bild nicht gefunden.'
+    });
+  }
 
-    const apps = readApps();
-
-    const idx = apps.findIndex(
-      a => a.id === req.params.id
-    );
-
-    if (idx < 0) {
-      return res.status(404).json({
-        error: 'Bewerbung nicht gefunden.'
-      });
-    }
-
-    apps[idx].status = status;
-    apps[idx].updatedAt =
-      new Date().toISOString();
-
-    writeApps(apps);
+  try {
+    fs.unlinkSync(filePath);
 
     res.json({
-      application: apps[idx]
+      success: true
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      message: 'Bild konnte nicht gelöscht werden.'
     });
   }
-);
+});
 
-app.delete(
-  '/api/applications/:id',
-  requireLogin,
-  requireAdmin,
-  (req, res) => {
-
-    const apps = readApps();
-
-    const next = apps.filter(
-      a => a.id !== req.params.id
-    );
-
-    if (next.length === apps.length) {
-      return res.status(404).json({
-        error: 'Bewerbung nicht gefunden.'
-      });
-    }
-
-    writeApps(next);
-
-    res.json({
-      ok: true
-    });
-  }
-);
-
-/* =========================
-   SERVER START
-========================= */
+// =========================
+// SERVER START
+// =========================
 
 app.listen(PORT, () => {
   console.log(
-    `Shadow Ranch läuft auf Port ${PORT}`
+    `Shadow Ranch Website läuft auf Port ${PORT}`
   );
 });
