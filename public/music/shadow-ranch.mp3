@@ -1,0 +1,127 @@
+<!-- SHADOW RANCH MUSIC -->
+<div id="musicPlayer">
+    <button id="musicToggle">▶</button>
+
+    <div class="musicInfo">
+        <div class="musicTitle">Shadow Ranch Radio</div>
+        <div class="musicStatus">Musik pausiert</div>
+    </div>
+
+    <input id="volume" type="range" min="0" max="100" value="50">
+</div>
+
+<div id="youtubePlayer"></div>
+
+<style>
+#youtubePlayer {
+    position: fixed;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+#musicPlayer {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 12px 16px;
+    border-radius: 14px;
+
+    background: rgba(15, 13, 10, .96);
+    border: 1px solid #b98a55;
+    box-shadow: 0 8px 30px rgba(0,0,0,.5);
+
+    color: #eee8df;
+    font-family: Arial, sans-serif;
+}
+
+#musicToggle {
+    width: 42px;
+    height: 42px;
+    border: 0;
+    border-radius: 50%;
+
+    background: #b98a55;
+    color: white;
+
+    font-size: 17px;
+    cursor: pointer;
+}
+
+#musicToggle:hover {
+    background: #e0b77b;
+}
+
+.musicInfo {
+    min-width: 150px;
+}
+
+.musicTitle {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.musicStatus {
+    margin-top: 3px;
+    color: #aaa39a;
+    font-size: 12px;
+}
+
+#volume {
+    width: 80px;
+    accent-color: #b98a55;
+}
+</style>
+
+<script>
+let player;
+let playing = false;
+
+function onYouTubeIframeAPIReady() {
+    player = new YT.Player("youtubePlayer", {
+        height: "1",
+        width: "1",
+        videoId: "-J2rSm8K9_Y",
+        playerVars: {
+            autoplay: 0,
+            controls: 0,
+            loop: 1,
+            playlist: "-J2rSm8K9_Y"
+        }
+    });
+}
+
+document.getElementById("musicToggle").addEventListener("click", function () {
+
+    if (!playing) {
+        player.playVideo();
+
+        this.textContent = "⏸";
+        document.querySelector(".musicStatus").textContent = "Musik läuft";
+
+        playing = true;
+    } else {
+        player.pauseVideo();
+
+        this.textContent = "▶";
+        document.querySelector(".musicStatus").textContent = "Musik pausiert";
+
+        playing = false;
+    }
+});
+
+document.getElementById("volume").addEventListener("input", function () {
+    if (player) {
+        player.setVolume(this.value);
+    }
+});
+</script>
+
+<script src="https://www.youtube.com/iframe_api"></script>
