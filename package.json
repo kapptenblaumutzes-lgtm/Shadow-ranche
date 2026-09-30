@@ -1,12 +1,14 @@
 {
-  "name": "shadow-ranch",
-  "version": "1.0.0",
+  "name": "shadow-ranch-website",
+  "version": "2.0.0",
   "private": true,
-  "scripts": {
-    "start": "node server.js"
-  },
+  "description": "Shadow Ranch GTA RP website with Discord authentication and application management",
+  "main": "server.js",
+  "scripts": {"start":"node server.js"},
   "dependencies": {
-    "express": "^5.1.0",
-    "express-session": "^1.18.2"
+    "express":"^5.1.0",
+    "express-session":"^1.18.2",
+    "dotenv":"^17.2.2",
+    "multer":"^2.0.2"
   }
 }
